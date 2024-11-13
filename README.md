@@ -1,3 +1,3 @@
 # flight-delay-predict
 
-https://drive.google.com/uc?id=1rSmpN_7dqb08XBCILyAmxXLjprwBj1P5
+Link Training Data: https://drive.google.com/uc?id=1rSmpN_7dqb08XBCILyAmxXLjprwBj1P5
