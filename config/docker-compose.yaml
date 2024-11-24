@@ -7,6 +7,12 @@ services:
      - "2181:2181"
     restart: unless-stopped
 
+  cassandra:
+    image: cassandra
+    container_name: cassandra
+    ports:
+     - "2182:2182"
+    restart: unless-stopped
   kafka:
     image: wurstmeister/kafka
     container_name: fdp_kafka
