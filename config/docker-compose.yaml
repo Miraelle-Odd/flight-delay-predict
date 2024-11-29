@@ -1,0 +1,57 @@
+version: '3'
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    container_name: fdp_zookeeper
+    ports:
+      - "2181:2181"
+    restart: unless-stopped
+
+  kafka:
+    image: wurstmeister/kafka
+    container_name: fdp_kafka
+    ports:
+      - "9092:9092"
+    expose:
+      - "9093"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: 192.168.1.54
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_CREATE_TOPICS: "flight-delay-predict:1:1"
+      KAFKA_LOG_RETENTION_HOURS: 1
+      KAFKA_LOG_RETENTION_BYTES: 4073741824
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_RETENTION_CHECK_INTERVAL_MS: 300000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+  cassandra:
+    image: cassandra
+    container_name: cassandra
+    ports:
+      - 7000:7000
+      - 9042:9042
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # Mount Docker socket
+      - ../database:/app/database  # Map the database folder to /app/table in the container
+
+  app:
+    build:
+      context: ../  # Use the parent directory as the build context
+      dockerfile: config/Dockerfile  # Specify the path to the Dockerfile
+    container_name: cassandra_setup
+    depends_on:
+      - cassandra
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # Mount Docker socket
+      - ../database:/app/database  # Map the database folder to /app/database in the container
+
+    environment:
+      - CASSANDRA_HOST=cassandra
+      - CASSANDRA_PORT=9042
+      - CASSANDRA_USERNAME=cassandra
+      - CASSANDRA_PASSWORD=cassandra
+      - KEYSPACE=testframe
+    restart: "no"
