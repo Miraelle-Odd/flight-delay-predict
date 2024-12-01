@@ -91,7 +91,17 @@ def spark_manager():
     data = readCsvData(cassSession)
     
     data.printSchema()
-    data.limit(2).show()    
+    
+    shorter = data.limit(2)
+    idAdded = addRecordIdToCsv(shorter)
+    
+    idAdded.show()
+    
+    writeToCass(idAdded, 'flightdelay')
+    
+    df = readFromCass(cassSession, 'flightdelay')
+    df.printSchema()
+    df.show()
     
     # data.createOrReplaceTempView('flights_temp')
     # print(cassSession.catalog.listTables())
