@@ -11,3 +11,7 @@ pip install cassandra-driver
 # note
 install python 3.11.8 for the best compapility with pyspark-cassandra
 set PYSPARK_PYTHON with the path to python.exe in env variables
+
+# Need install WSL
+
+# Need to end of Line Sequence to LF 
