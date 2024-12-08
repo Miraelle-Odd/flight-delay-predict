@@ -14,4 +14,15 @@ set PYSPARK_PYTHON with the path to python.exe in env variables
 
 # Need install WSL
 
-# Need to end of Line Sequence to LF 
+# Need to end of Line Sequence to LF
+
+# Turn off spark temp file deletion
+Open your %SPARK_HOME%\config folder and add the following config to log4j2.properties.
+If the file does not exist, make a copy of log4j2.properties.template then rename it to log4j2.properties and add the config.
+
+logger.shutdownhookmanager.name = org.apache.spark.util.ShutdownHookManager
+logger.shutdownhookmanager.level = OFF
+logger.sparkenv.name = org.apache.spark.SparkEnv
+logger.sparkenv.level = ERROR
+
+# Make sure streaming\kafka-checkpoint and streaming\spark-temp folders are created
