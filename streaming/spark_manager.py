@@ -141,18 +141,21 @@ def testable():
     
 def spark_manager():
     cassSession = createCassSession("FlightData")
-    # data = readCsvData(cassSession)
-    # shorter = data.limit(2)
-    # processedData = preprecessingBeforeWriteToCass(shorter)
-    # writeToCass(processedData, 'flightdelay')
     
-    df = readFromCass(cassSession)
-    df.show()
+    # test with batch
+    data = readCsvData(cassSession)
+    shorter = data.limit(2)
+    processedData = preprecessingBeforeWriteToCass(shorter)
+    writeToCass(processedData, 'flightdelay')
+    
+    # streaming
+    # df = readFromCass(cassSession)
+    # df.show()
     
     # dfStream = startKafkaReadStream(cassSession)
     
     # query = dfStream.writeStream \
-    #     .outputMode("complete") \
+    #     .outputMode("update") \
     #     .format("console") \
     #     .trigger(processingTime='10 seconds')\
     #     .option('checkpointLocation', KAFKA_CHECKPOINT_DIR)\
