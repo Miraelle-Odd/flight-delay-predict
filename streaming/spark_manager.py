@@ -6,7 +6,7 @@ import os
 
 # File paths
 spk_manager_dir = os.path.dirname(__file__)
-DATA_FILE_PATH = os.path.join(spk_manager_dir, "..", "Final_Data/kg-fightdelay-dataset", "T_ONTIME_REPORTING_2021_M1.csv")
+DATA_FILE_PATH = os.path.join(spk_manager_dir, "..", "Final_Data/kg-fightdelay-dataset", "stream_data.csv")
 SPARK_TEMP_FOLDER = os.path.join(spk_manager_dir, 'spark-temp')
 
 CASS_HOST_IP = '127.0.0.1'
@@ -44,7 +44,7 @@ def createCassSession(appName):
             .config("spark.streaming.stopGracefullyOnShutdown", True)\
             .getOrCreate()
         print('--- Connection to Cassandra created successfully! ---')
-        # cassSession.conf.set('spark.sql.shuffle.partitions', 8)
+        cassSession.conf.set('spark.sql.shuffle.partitions', 8)
         return cassSession
     except Exception as e:
         print('-- Fail to create Cassandra connection with error: --', e)
