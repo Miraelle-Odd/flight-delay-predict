@@ -74,9 +74,10 @@ def readFromCass(cassSession, table='flightdelay', keyspace='testframe'):
         print('-- Reading from Cassandra fail with error: --', e)
         return
     
-def showDataframeInfo(dataframe, dataShowLimit=5):
+def showDataframeInfo(dataframe, streamMode=False, dataShowLimit=5):
     dataframe.printSchema()
-    dataframe.show(dataShowLimit)
+    if (streamMode == False):
+        dataframe.show(dataShowLimit)
     
 def preprecessingBeforeWriteToCass(rawData):
     return lowercaseAllHeader(addRecordIdToCsv(rawData))
@@ -94,7 +95,7 @@ def startKafkaReadStream(sparkSession, schema=0, kafkaTopic=KAFKA_TOPIC_NAME_CON
             .selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)") \
             # .select(func.from_json(func.col("value"), schema).alias("data")) \
             # .select("data.*")
-        showDataframeInfo(df)
+        showDataframeInfo(df, True)
         print(f'--- Kafka stream reading... ---')
         return df
     except Exception as e:
@@ -140,28 +141,26 @@ def testable():
     
 def spark_manager():
     cassSession = createCassSession("FlightData")
-    data = readCsvData(cassSession)
-    
-    shorter = data.limit(2)
-    processedData = preprecessingBeforeWriteToCass(shorter)
-    
-    writeToCass(processedData, 'flightdelay')
+    # data = readCsvData(cassSession)
+    # shorter = data.limit(2)
+    # processedData = preprecessingBeforeWriteToCass(shorter)
+    # writeToCass(processedData, 'flightdelay')
     
     df = readFromCass(cassSession)
     df.show()
-    # schema = df.schema()
     
     # dfStream = startKafkaReadStream(cassSession)
-    
-    # dfStream.printSchema()
     
     # query = dfStream.writeStream \
     #     .outputMode("complete") \
     #     .format("console") \
+    #     .trigger(processingTime='10 seconds')\
+    #     .option('checkpointLocation', KAFKA_CHECKPOINT_DIR)\
+    #     .start()
         
     # query.awaitTermination()
     
-    cassSession.stop()
+    # cassSession.stop()
 
 if __name__ == "__main__":
     try:

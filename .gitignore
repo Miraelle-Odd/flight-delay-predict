@@ -163,3 +163,4 @@ cython_debug/
 
 Final_Data/kg-fightdelay-dataset
 streaming/spark-temp
+streaming/kafka-checkpoint
