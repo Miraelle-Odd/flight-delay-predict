@@ -22,7 +22,7 @@ KAFKA_CHECKPOINT_DIR = os.path.join(spk_manager_dir, 'kafka-checkpoint')
 def createSparkSession(appName):
     return SparkSession.builder.appName(appName).getOrCreate()
 
-def readCsvData(sparkSession, filePath=DATA_FILE_PATH):
+def readCsvData(filePath=DATA_FILE_PATH):
     return sparkSession.read.format('csv').\
         option('inferSchema','true').\
         option('header', 'true').\
@@ -61,10 +61,10 @@ def writeToCass(dataset, table='flightdelay', keyspace='testframe'):
     except Exception as e:
         print('-- Writing to Cassandra fail with error: --', e)
 
-def readFromCass(cassSession, table='flightdelay', keyspace='testframe'):
+def readFromCass(table='flightdelay', keyspace='testframe'):
     try:
         print(f'-- Start reading table {table} from Cassandra --')
-        df = cassSession.read \
+        df = sparkSession.read \
             .format("org.apache.spark.sql.cassandra") \
             .options(table=table, keyspace=keyspace) \
             .load()
@@ -82,7 +82,7 @@ def showDataframeInfo(dataframe, streamMode=False, dataShowLimit=5):
 def preprecessingBeforeWriteToCass(rawData):
     return lowercaseAllHeader(addRecordIdToCsv(rawData))
 
-def startKafkaReadStream(sparkSession, schema=0, kafkaTopic=KAFKA_TOPIC_NAME_CONS, kafkaServer=KAFKA_BOOTSTRAP_SERVERS_CONS):
+def startKafkaReadStream(schema=0, kafkaTopic=KAFKA_TOPIC_NAME_CONS, kafkaServer=KAFKA_BOOTSTRAP_SERVERS_CONS):
     try:
         print(f'-- Start Kafka reading stream --')
         df = sparkSession \
@@ -91,83 +91,74 @@ def startKafkaReadStream(sparkSession, schema=0, kafkaTopic=KAFKA_TOPIC_NAME_CON
             .option("kafka.bootstrap.servers", kafkaServer) \
             .option("subscribe", kafkaTopic) \
             .option("startingOffsets", "earliest")\
-            .load() \
-            .selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)") \
-            # .select(func.from_json(func.col("value"), schema).alias("data")) \
-            # .select("data.*")
-        showDataframeInfo(df, True)
+            .load()
+        parsedDf = parseJsonFromReadingStream(df, schema)
         print(f'--- Kafka stream reading... ---')
-        return df
+        return parsedDf
     except Exception as e:
         print('-- Fail to open Kafka reading stream with error: --', e)
         return
 
 def output(dataframe, batchId):
-    print(f'Batch Id: {batchId}')
+    recordCount = dataframe.count()
+    print(f"Batch {batchId} contains {recordCount} records.")
     writeToCass(dataframe)
+    df = readFromCass()
+    df.printSchema()
+    df.show()
+    
 
 def startKafkaWriteStream(dataframe):
     try:
         print(f'-- Start Kafka writing stream --')
-        dataframe.writeStream \
-            .forEachBatch(output)\
+        processedData = preprecessingBeforeWriteToCass(dataframe)
+        query = processedData.writeStream \
+            .foreachBatch(output)\
             .trigger(processingTime='10 seconds')\
             .option('checkpointLocation', KAFKA_CHECKPOINT_DIR)\
-            .start() \
-            .awaitTermination()
+            .start()
         print(f'-- Kafka stream writing --')
+        return query
     except Exception as e:
         print('-- Fail to open Kafka writing stream with error: --', e)
-    
 
 def testable():
-    print('--Test Starting--')
-    cassSession = createCassSession("FlightData")    
+    print('--Test Starting--')   
     
     data = [(6, 28, "IO1"), (7, 32, "NA1")]
     columns = ["id", "age", "name"]
     print('--We will be writing these following data to cassandra and show it--')
     print(data,columns)
     
-    new_df = cassSession.createDataFrame(data, columns)
+    new_df = sparkSession.createDataFrame(data, columns)
     writeToCass(new_df, 'testable')
     
-    df = readFromCass(cassSession, 'testable')
+    df = readFromCass('testable')
     df.printSchema()
     df.show()
     
-    cassSession.stop()
+    sparkSession.stop()
     print('--Test Finish--')
     
 def spark_manager():
-    cassSession = createCassSession("FlightData")
     
-    # test with batch
-    data = readCsvData(cassSession)
-    shorter = data.limit(2)
-    processedData = preprecessingBeforeWriteToCass(shorter)
-    writeToCass(processedData, 'flightdelay')
+    # get Cass schema
+    df = readFromCass()
+    schema = uppercaseAllHeader(df).schema
     
-    # streaming
-    # df = readFromCass(cassSession)
-    # df.show()
+    # Kafka streaming
+    dfStream = startKafkaReadStream(schema)
     
-    # dfStream = startKafkaReadStream(cassSession)
+    query = startKafkaWriteStream(dfStream)
     
-    # query = dfStream.writeStream \
-    #     .outputMode("update") \
-    #     .format("console") \
-    #     .trigger(processingTime='10 seconds')\
-    #     .option('checkpointLocation', KAFKA_CHECKPOINT_DIR)\
-    #     .start()
-        
-    # query.awaitTermination()
+    # await termination
+    query.awaitTermination()
     
-    # cassSession.stop()
+    # sparkSession.stop()
 
 if __name__ == "__main__":
     try:
-        # testable()     
+        sparkSession = createCassSession("FlightData")     
         spark_manager()
                 
     except Exception as e:
