@@ -92,9 +92,9 @@ def startKafkaReadStream(schema=0, kafkaTopic=KAFKA_TOPIC_NAME_CONS, kafkaServer
             .option("subscribe", kafkaTopic) \
             .option("startingOffsets", "earliest")\
             .load()
-        test = parseJsonFromReadingStream(df, schema)
+        parsedDf = parseJsonFromReadingStream(df, schema)
         print(f'--- Kafka stream reading... ---')
-        return test
+        return parsedDf
     except Exception as e:
         print('-- Fail to open Kafka reading stream with error: --', e)
         return
