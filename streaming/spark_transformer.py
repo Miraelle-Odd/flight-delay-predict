@@ -7,3 +7,12 @@ def addRecordIdToCsv(rawDf):
 
 def lowercaseAllHeader(rawDf):
     return rawDf.toDF(*[col.lower() for col in rawDf.columns])
+
+def uppercaseAllHeader(rawDf):
+    return rawDf.toDF(*[col.upper() for col in rawDf.columns])
+
+def parseJsonFromReadingStream(rawDf, schema=0):
+    df = rawDf.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)") \
+            .select(func.from_json(func.col("value"), schema).alias("data")) \
+            .select("data.*")
+    return lowercaseAllHeader(df)
