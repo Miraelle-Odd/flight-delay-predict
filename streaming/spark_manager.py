@@ -3,9 +3,13 @@ from pyspark.sql.types import StructType, StructField, IntegerType, StringType
 import pyspark.sql.functions as func
 from spark_transformer import *
 import os
+import sys
+sys.path.insert(1, '../training')
+import model_predictor
 
 # File paths
 spk_manager_dir = os.path.dirname(__file__)
+#DATA_FILE_PATH = os.path.join(spk_manager_dir, "..", "Final_Data", "Training_Stream_Data.csv")
 DATA_FILE_PATH = os.path.join(spk_manager_dir, "..", "Final_Data/kg-fightdelay-dataset", "stream_data.csv")
 SPARK_TEMP_FOLDER = os.path.join(spk_manager_dir, 'spark-temp')
 
@@ -16,7 +20,7 @@ CASS_PASSWORD = 'cassandra'
 
 # Kafka configuration
 KAFKA_TOPIC_NAME_CONS = "flight-delay-predict"
-KAFKA_BOOTSTRAP_SERVERS_CONS = 'localhost:9092'
+KAFKA_BOOTSTRAP_SERVERS_CONS = 'localhost:19092'
 KAFKA_CHECKPOINT_DIR = os.path.join(spk_manager_dir, 'kafka-checkpoint')
 
 def createSparkSession(appName):
@@ -106,6 +110,8 @@ def output(dataframe, batchId):
     df = readFromCass()
     df.printSchema()
     df.show()
+
+    model_predictor.process_dataframe(spark_df=df)
     
 
 def startKafkaWriteStream(dataframe):
