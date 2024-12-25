@@ -2,15 +2,16 @@ from kafka import KafkaProducer
 import pandas as pd
 import json
 import os
-
+import time
 
 # Kafka configuration
 KAFKA_TOPIC_NAME_CONS = "flight-delay-predict"
-KAFKA_BOOTSTRAP_SERVERS_CONS = 'localhost:9092'
+KAFKA_BOOTSTRAP_SERVERS_CONS = 'localhost:19092'
 
 # File paths
 script_dir = os.path.dirname(__file__)  # Directory where producer.py is located
-DATA_FILE_PATH = os.path.join(script_dir, "..", "Final_Data", "Training_Stream_Data.csv")
+#DATA_FILE_PATH = os.path.join(script_dir, "..", "Final_Data", "Training_Stream_Data.csv")
+DATA_FILE_PATH = os.path.join(script_dir, "..", "Final_Data", "kg-flightdelay-dataset\stream_data.csv")
 
 def read_data(file_path):
     """
@@ -24,18 +25,34 @@ def read_data(file_path):
         print(f"Error reading data: {e}")
         return None
 
-def send_to_kafka(producer, topic, data):
+def send_to_kafka(producer, topic, data, batch_size=20000, delay=5):
     """
-    Sends each row of the data as a message to the Kafka topic.
+    Sends data to Kafka in batches with a delay between each batch.
+    
+    Args:
+        producer: Kafka producer instance.
+        topic: Kafka topic name.
+        data: DataFrame containing the data to send.
+        batch_size: Number of rows to send in each batch.
+        delay: Delay in seconds between sending each batch.
     """
-    for _, row in data.iterrows():
-        # Convert each row to a dictionary, then to JSON
-        message = row.to_dict()
-        try:
-            producer.send(topic, value=message)
-            print(f"Message sent: {message}")
-        except Exception as e:
-            print(f"Error sending message: {e}")
+    total_rows = len(data)
+    for start in range(0, total_rows, batch_size):
+        end = min(start + batch_size, total_rows)
+        batch = data.iloc[start:end]
+        
+        for _, row in batch.iterrows():
+            message = row.to_dict()
+            try:
+                producer.send(topic, value=message)
+            except Exception as e:
+                print(f"Error sending message: {e}")
+        
+        print(f"Batch {start // batch_size + 1} sent: {len(batch)} messages.")
+        
+        if end < total_rows:
+            print(f"Waiting for {delay} seconds before sending the next batch...")
+            time.sleep(delay)
 
 def producer(file_path):
     """
