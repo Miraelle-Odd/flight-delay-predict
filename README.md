@@ -26,3 +26,7 @@ logger.sparkenv.name = org.apache.spark.SparkEnv
 logger.sparkenv.level = ERROR
 
 # Make sure streaming\kafka-checkpoint and streaming\spark-temp folders are created
+
+# Setup dataset
+Dataset link: https://www.kaggle.com/datasets/phamtheds/predict-flight-delays?select=stream_data.csv
+Create a folder "kg-flightdelay-dataset" in "Final_Data", download stream_data.csv from kaggle link above and put it in "kg-flightdelay-dataset"
