@@ -4,7 +4,7 @@ import pandas as pd
 
 # Kafka configuration
 KAFKA_TOPIC_NAME = "flight-delay-predict"
-KAFKA_BOOTSTRAP_SERVERS = 'localhost:9092'
+KAFKA_BOOTSTRAP_SERVERS = 'localhost:19092'
 
 def consume_messages():
     """
