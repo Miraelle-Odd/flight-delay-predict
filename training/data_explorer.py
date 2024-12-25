@@ -47,13 +47,20 @@ class DataExplorer:
             return
 
         correlation_data = self.df[numeric_cols].corr()[target_col].drop(target_col)
-
         correlation_df = correlation_data.reset_index()
-        correlation_df.columns = ["Feature", "Correlation with ARR_DELAY"]
+        correlation_df.columns = ["Feature", "Correlation with " + target_col]
 
-        plt.figure(figsize=(8, 6))
-        sns.heatmap(correlation_df.set_index("Feature").T, annot=True, cmap="coolwarm", fmt=".2f")
+        plt.figure(figsize=(12, 8))  # Increase figure size for readability
+        sns.heatmap(
+            correlation_df.set_index("Feature").T, 
+            annot=True, 
+            cmap="coolwarm", 
+            fmt=".2f", 
+            cbar=True
+        )
         plt.title(f"Correlation Heatmap: Features vs {target_col}")
+        plt.xticks(rotation=45, ha='right')  # Rotate labels for readability
+        plt.tight_layout()  # Adjust layout to fit everything
         plt.show()
 
     def visualize_categorical_count(self, column_name):
@@ -92,8 +99,13 @@ if __name__ == "__main__":
     explorer.count_missing_values()
     explorer.show_summary()
     explorer.show_heatmap(target_col="arr_delay")
-    explorer.visualize_distribution("arr_delay")
-    explorer.visualize_correlation(["dep_delay", "arr_delay", "dep_del15", "arr_del15"])
-    explorer.visualize_categorical_count("origin")
+    # explorer.visualize_distribution("dep_delay")
+    # explorer.visualize_distribution("dep_delay_new")
+    # explorer.visualize_distribution("dep_del15")
+    # explorer.visualize_distribution("dep_delay_group")
+    # explorer.visualize_distribution("arr_delay_new")
+    # explorer.visualize_distribution("arr_del15")
+    # explorer.visualize_distribution("dep_delay_group")
+    # explorer.visualize_distribution("arr_delay")
 
     cluster.shutdown()
